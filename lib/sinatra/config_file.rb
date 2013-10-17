@@ -130,7 +130,9 @@ module Sinatra
             $stderr.puts "loading config file '#{file}'" if logging?
             document = IO.read(file)
             document = ERB.new(document).result if file.split('.').include?('erb')
+            puts "doc is #{YAML.load(document)}"
             yaml = config_for_env(YAML.load(document)) || {}
+            puts "yaml is #{yaml}"
             yaml.each_pair do |key, value|
               for_env = config_for_env(value)
               set key, for_env unless value and for_env.nil? and respond_to? key
@@ -149,8 +151,18 @@ module Sinatra
     # returned config is a indifferently accessible Hash, which means that you
     # can get its values using Strings or Symbols as keys.
     def config_for_env(hash)
-      if hash.respond_to? :keys and hash.keys.all? { |k| environments.include? k.to_s }
+      puts "hash: #{hash.keys}. environments: #{environments}"
+      if hash.respond_to?(:keys) and !(hash.keys.all? { |k| environments.include? k.to_s })
+        raise ArgumentError, "not all configuration keys are specified in 'environments': #{hash.keys.map(&:to_s) - environments.map(&:to_s)}"
+      end
+
+      if hash.respond_to? :keys
+        puts "hash[environment.to_sym]"
+        puts hash[environment.to_sym]
+        puts "hash[environment.to_s]"
+        puts hash[environment.to_s]
         hash = hash[environment.to_s] || hash[environment.to_sym]
+        puts "hash is #{hash}"
       end
 
       if hash.respond_to? :to_hash

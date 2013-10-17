@@ -1,0 +1,6 @@
+---
+foo:
+  production: 10
+  development: 20
+  test: 30
+  staging: 40

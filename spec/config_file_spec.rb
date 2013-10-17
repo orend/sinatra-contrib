@@ -2,23 +2,23 @@ require 'backports'
 require_relative 'spec_helper'
 
 describe Sinatra::ConfigFile do
-  def config_file(*args, &block)
+  def config_file(filename, &block)
     mock_app do
       register Sinatra::ConfigFile
       set :root, File.expand_path('../config_file', __FILE__)
       instance_eval(&block) if block
-      config_file(*args)
+      config_file(filename)
     end
   end
 
   it 'should set options from a simple config_file' do
-    config_file 'key_value.yml'
+    config_file('key_value.yml'){ set :environments => %w(foo something nested) }
     settings.foo.should == 'bar'
     settings.something.should == 42
   end
 
   it 'should create indifferent hashes' do
-    config_file 'key_value.yml'
+    config_file 'key_value.yml', %w(foo something nested)
     settings.nested['a'].should == 1
     settings.nested[:a].should == 1
   end
@@ -49,6 +49,15 @@ describe Sinatra::ConfigFile do
     settings.foo.should == 10
     # now test it
     config_file('missing_env.yml') { set :foo => 42, :environment => :test }
+    settings.foo.should == 42
+  end
+
+  it 'should not set present values to nil if there is an extra environment' do
+    # first let's check the test is actually working properly
+    config_file('extra_env.yml') { set :foo => 42, :environment => :production }
+    settings.foo.should == 10
+    # now test it
+    config_file('extra_env.yml') { set :foo => 42, :environment => :test }
     settings.foo.should == 42
   end
 
